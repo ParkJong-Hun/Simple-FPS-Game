@@ -32,6 +32,7 @@ public class EnemyFSM : MonoBehaviour
     public GameObject bloodFX;
     public AudioClip dead;
     AudioSource audioSource;
+    public GameObject magazine;
     // Start is called before the first frame update
     void Start()
     {
@@ -217,5 +218,11 @@ public class EnemyFSM : MonoBehaviour
         print("소멸");
         Destroy(Blood);
         Destroy(gameObject);
+        System.Random random = new System.Random();
+
+        //탄약 드롭
+        int ran = random.Next(1, 3);
+        print(ran);
+        if (ran == 2) { GameObject Magazine = Instantiate(magazine, new Vector3(transform.position.x, transform.position.y - 0.5f, transform.position.z), new Quaternion(0, 0, 0, 0)); }
     }
 }

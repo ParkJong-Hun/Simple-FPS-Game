@@ -38,6 +38,7 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(2f);
         gameText.text = "Go!";
+        Score.score = 0;
         yield return new WaitForSeconds(0.5f);
         gameLabel.SetActive(false);
         Cursor.visible = false;
@@ -92,6 +93,10 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         Score.score = 0;
         Score.time = 0;
+    }
+    public void ResultGame()
+    {
+        Application.LoadLevel("Ending");
     }
     public void QuitGame()
     {

@@ -128,12 +128,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d89716495d244b4890f29e2f9983fc8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  findDistance: 30
   attackDistance: 3
+  moveSpeed: 5
   attackPower: 3
   moveDistance: 100
+  hp: 15
+  maxHp: 15
   hpSlider: {fileID: 7459943648629371527}
   bloodFX: {fileID: 3975113356518485757, guid: f15ee408fe7835b49928ecb9a91d816f, type: 3}
   dead: {fileID: 8300000, guid: 2a1d6994a3183744eb70a3c74ad28f62, type: 3}
+  magazine: {fileID: 2459073011666139981, guid: d120c448b803ba94faac4cf5e589e98e,
+    type: 3}
 --- !u!195 &7459943647364871809
 NavMeshAgent:
   m_ObjectHideFlags: 0

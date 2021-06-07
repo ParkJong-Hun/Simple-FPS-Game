@@ -5,6 +5,10 @@ TagManager:
   serializedVersion: 2
   tags:
   - FxTemporaire
+  - Target
+  - Metal
+  - ExplosiveBarrel
+  - Magazine
   layers:
   - Default
   - TransparentFX

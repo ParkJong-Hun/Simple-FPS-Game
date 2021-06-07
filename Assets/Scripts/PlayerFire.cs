@@ -12,14 +12,20 @@ public class PlayerFire : MonoBehaviour
     public GameObject bulletEffect; // 피격 이펙트 오브젝트
     ParticleSystem ps;//피격 이펙트 파티클 시스템
     Animator anim;
-    public Text wModeText;
+    public Image wModeImage;
     public GameObject[] eff_Flash;
     AudioSource audioSource;
     public AudioClip boltUp;
     public AudioClip fire;
     public AudioClip granade;
+    public AudioClip dryFire;
+    public AudioClip zoom;
     public GameObject ironSite;
     public GameObject crossHair;
+    public static int magazine;
+    public static int g400; 
+    public Text magazineText;
+    public Text g400Text;
     enum WeponMode //무기 모드 변수
     {
         Normal,
@@ -33,6 +39,8 @@ public class PlayerFire : MonoBehaviour
         anim = GetComponentInChildren<Animator>();
         wMode = WeponMode.Normal;
         audioSource = GetComponent<AudioSource>();
+        magazine = 30;
+        g400 = 3;
     }
     // Update is called once per frame
     void Update()
@@ -49,19 +57,27 @@ public class PlayerFire : MonoBehaviour
             switch (wMode)
             {
                 case WeponMode.Normal:
-                    GameObject bomb = Instantiate(bombFactory); // 수류탄 생성
-                    bomb.transform.position = firePosition.transform.position;
-                    //수류탄 오브젝트의 Rigidbody 컴포넌트를 가져온다.
-                    Rigidbody rb = bomb.GetComponent<Rigidbody>();
-                    //카메라의 정면 방향으로 수류탄에 물리적인 힘을 가한다.
-                    rb.AddForce(Camera.main.transform.forward * throwPower, ForceMode.Impulse);
-                    break;
+                    if (g400 != 0)
+                    {
+                       g400 -= 1;
+                        g400Text.text = "남은 수류탄: " + g400;
+                       GameObject bomb = Instantiate(bombFactory); // 수류탄 생성
+                       bomb.transform.position = firePosition.transform.position;
+                       //수류탄 오브젝트의 Rigidbody 컴포넌트를 가져온다.
+                       Rigidbody rb = bomb.GetComponent<Rigidbody>();
+                       //카메라의 정면 방향으로 수류탄에 물리적인 힘을 가한다.
+                       rb.AddForce(Camera.main.transform.forward * throwPower, ForceMode.Impulse);
+                     }
+                        break;
                 case WeponMode.Sniper:
                     //만일, 줌 모드 상태가 아니라면 카메라를 확대하고 줌 모드 상태로 변경한다.
                     if (!ZoomMode)
                     {
                         ironSite.SetActive(true);
                         crossHair.SetActive(false);
+                        audioSource.Stop();//기존 실행된 소리를 중지
+                        audioSource.clip = zoom;
+                        audioSource.Play();//새로 실행
                         Camera.main.fieldOfView = 15f;
                         ZoomMode = true;
                     }
@@ -79,35 +95,44 @@ public class PlayerFire : MonoBehaviour
         }
         if (Input.GetMouseButtonDown(0)) //왼쪽 마우스버튼을 눌렀다면..
         {
-            if (anim.GetFloat("MoveMotion") == 0)
-            {
-                anim.SetTrigger("Attack");
-            }
-            //격발 소리 시작
-            audioSource.Stop();
-            audioSource.clip = fire;
-            audioSource.Play();
-            //레이를 생성한 후 발사될 위치와 진행 방향을 설정한다.
-            Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
-            //레이가 부딪힌 대상의 정보를 저장할 변수를 생성한다.
-            RaycastHit hitInfo = new RaycastHit();
-            if (Physics.Raycast(ray, out hitInfo))
-            {
-                if (hitInfo.transform.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+            if (magazine != 0) {
+                if (anim.GetFloat("MoveMotion") == 0)
                 {
-                    EnemyFSM eFSM = hitInfo.transform.GetComponent<EnemyFSM>();
-                    eFSM.HitEnemy(weaponPower);
+                    anim.SetTrigger("Attack");
                 }
-                else
+                //격발 소리 시작
+                audioSource.Stop();
+                audioSource.clip = fire;
+                audioSource.Play();
+                magazine -= 1;
+                magazineText.text = "남은 탄창: " + magazine;
+                //레이를 생성한 후 발사될 위치와 진행 방향을 설정한다.
+                Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
+                //레이가 부딪힌 대상의 정보를 저장할 변수를 생성한다.
+                RaycastHit hitInfo = new RaycastHit();
+                if (Physics.Raycast(ray, out hitInfo))
                 {
-                    //피격 이펙트의 위치를 레이가 부딪힌 지점으로 이동시킴
-                    bulletEffect.transform.position = hitInfo.point;
-                    //피격 이팩트의 forward 방향을 레이가 부딪힌 지점의 법선 벡터와 일치시킨다.
-                    bulletEffect.transform.forward = hitInfo.normal;
-                    ps.Play();
-                }   
+                    if (hitInfo.transform.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+                    {
+                        EnemyFSM eFSM = hitInfo.transform.GetComponent<EnemyFSM>();
+                        eFSM.HitEnemy(weaponPower);
+                    }
+                    else
+                    {
+                        //피격 이펙트의 위치를 레이가 부딪힌 지점으로 이동시킴
+                        bulletEffect.transform.position = hitInfo.point;
+                        //피격 이팩트의 forward 방향을 레이가 부딪힌 지점의 법선 벡터와 일치시킨다.
+                        bulletEffect.transform.forward = hitInfo.normal;
+                        ps.Play();
+                    }
+                }
+                StartCoroutine(ShootEffectOn(0.05f));
+            } else
+            {
+                audioSource.Stop();
+                audioSource.clip = dryFire;
+                audioSource.Play();
             }
-            StartCoroutine(ShootEffectOn(0.05f));
 
         }
         IEnumerator ShootEffectOn(float duration)
@@ -118,21 +143,26 @@ public class PlayerFire : MonoBehaviour
             yield return new WaitForSeconds(duration);
             eff_Flash[num].SetActive(false);
         }
-        if (Input.GetKeyDown(KeyCode.Alpha1)) //숫자키 1을 눌렀다면 노말모드
+        if (Input.GetKeyDown(KeyCode.Alpha2) && wMode == WeponMode.Sniper) //숫자키 1을 눌렀다면 수류탄모드
         {
             wMode = WeponMode.Normal;
             Camera.main.fieldOfView = 60f;
-            wModeText.text = "수류탄 모드";
+            //wModeText.text = "수류탄 모드";
+            wModeImage.sprite = Resources.Load<Sprite>("Image/state_1");
             ironSite.SetActive(false);
             crossHair.SetActive(true);
             audioSource.Stop();//기존 실행된 소리를 중지
             audioSource.clip = boltUp;
             audioSource.Play();//새로 실행
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha2)) //숫자키 2를 눌렀다면 스나이퍼모드
+        else if (Input.GetKeyDown(KeyCode.Alpha2) && wMode == WeponMode.Normal) //숫자키 2를 눌렀다면 정조준모드
         {
             wMode = WeponMode.Sniper;
-            wModeText.text = "정조준 모드";
+            //wModeText.text = "정조준 모드";
+            wModeImage.sprite = Resources.Load<Sprite>("Image/state_2");
+            audioSource.Stop();//기존 실행된 소리를 중지
+            audioSource.clip = boltUp;
+            audioSource.Play();//새로 실행
         }
     }
 }
